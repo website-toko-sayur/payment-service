@@ -37,7 +37,7 @@ type Kafka struct {
 }
 
 type Topic struct {
-	PublisherPaymentSuccess string `json:"publisher_payment_success"`
+	PaymentSuccess string `json:"payment_success"`
 }
 
 type Redis struct {
@@ -84,9 +84,7 @@ func NewConfig() *Config {
 			ProducerEnabled:  viper.GetBool("KAFKA_PRODUCER_ENABLED"),
 		},
 		Topic: Topic{
-			// ProductUpdateStock: viper.GetString("TOPIC_PRODUCT_UPDATE_STOCK"),
-			ProductPublish: viper.GetString("TOPIC_PRODUCT_PUBLISH"),
-			ProductDelete:  viper.GetString("TOPIC_PRODUCT_DELETE"),
+			PaymentSuccess: viper.GetString("TOPIC_PAYMENT_SUCCESS"),
 		},
 		Redis: Redis{
 			Host:     viper.GetString("REDIS_HOST"),
