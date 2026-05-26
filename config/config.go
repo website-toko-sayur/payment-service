@@ -17,6 +17,11 @@ type App struct {
 
 	GatewaySecretKey  string `json:"gateway_secret_key"`
 	RequestApiGAteway string `json:"request_api_gateway"`
+
+	ServerTimeOut     int    `json:"server_timeout"`
+	ProductServiceUrl string `json:"product_service_url"`
+	UserServiceUrl    string `json:"user_service_url"`
+	OrderServiceUrl   string `json:"order_service_url"`
 }
 
 type PsqlDB struct {
@@ -67,6 +72,11 @@ func NewConfig() *Config {
 
 			GatewaySecretKey:  viper.GetString("GATEWAY_SECRET_KEY"),
 			RequestApiGAteway: viper.GetString("REQUEST_API_GATEWAY"),
+
+			ServerTimeOut:     viper.GetInt("SERVER_TIMEOUT"),
+			ProductServiceUrl: viper.GetString("PRODUCT_SERVICE_URL"),
+			UserServiceUrl:    viper.GetString("USER_SERVICE_URL"),
+			OrderServiceUrl:   viper.GetString("ORDER_SERVICE_URL"),
 		},
 		Psql: PsqlDB{
 			Host:      viper.GetString("DATABASE_HOST"),
