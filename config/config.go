@@ -60,13 +60,19 @@ type Redis struct {
 	Password string `json:"password"`
 }
 
+type Midtrans struct {
+	ServerKey   string `json:"server_key"`
+	Environment int    `json:"environment"`
+}
+
 type Config struct {
-	App     App    `json:"app"`
-	Psql    PsqlDB `json:"psql"`
-	Kafka   Kafka  `json:"kafka"`
-	Topic   Topic  `json:"topic"`
-	Storage Minio  `json:"storage"`
-	Redis   Redis  `json:"redis"`
+	App      App      `json:"app"`
+	Psql     PsqlDB   `json:"psql"`
+	Kafka    Kafka    `json:"kafka"`
+	Topic    Topic    `json:"topic"`
+	Storage  Minio    `json:"storage"`
+	Redis    Redis    `json:"redis"`
+	Midtrans Midtrans `json:"midtrans"`
 }
 
 func NewConfig() *Config {
@@ -118,6 +124,10 @@ func NewConfig() *Config {
 			Host:     viper.GetString("REDIS_HOST"),
 			Port:     viper.GetString("REDIS_PORT"),
 			Password: viper.GetString("REDIS_PASSWORD"),
+		},
+		Midtrans: Midtrans{
+			ServerKey:   viper.GetString("MIDTRANS_SERVER_KEY"),
+			Environment: viper.GetInt("MIDTRANS_ENVIRONMENT"),
 		},
 	}
 }
