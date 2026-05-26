@@ -45,6 +45,15 @@ type Topic struct {
 	PaymentSuccess string `json:"payment_success"`
 }
 
+type Minio struct {
+	Endpoint  string `json:"minio_endpoint"`
+	PublicURL string `json:"minio_public_url"`
+	AccessKey string `json:"minio_access_key"`
+	SecretKey string `json:"minio_secret_key"`
+	Bucket    string `json:"minio_bucket"`
+	UseSSL    bool   `json:"minio_use_ssl"`
+}
+
 type Redis struct {
 	Host     string `json:"host"`
 	Port     string `json:"port"`
@@ -52,11 +61,12 @@ type Redis struct {
 }
 
 type Config struct {
-	App   App    `json:"app"`
-	Psql  PsqlDB `json:"psql"`
-	Kafka Kafka  `json:"kafka"`
-	Topic Topic  `json:"topic"`
-	Redis Redis  `json:"redis"`
+	App     App    `json:"app"`
+	Psql    PsqlDB `json:"psql"`
+	Kafka   Kafka  `json:"kafka"`
+	Topic   Topic  `json:"topic"`
+	Storage Minio  `json:"storage"`
+	Redis   Redis  `json:"redis"`
 }
 
 func NewConfig() *Config {
@@ -95,6 +105,14 @@ func NewConfig() *Config {
 		},
 		Topic: Topic{
 			PaymentSuccess: viper.GetString("TOPIC_PAYMENT_SUCCESS"),
+		},
+		Storage: Minio{
+			Endpoint:  viper.GetString("MINIO_ENDPOINT"),
+			PublicURL: viper.GetString("MINIO_PUBLIC_URL"),
+			AccessKey: viper.GetString("MINIO_ACCESS_KEY"),
+			SecretKey: viper.GetString("MINIO_SECRET_KEY"),
+			Bucket:    viper.GetString("MINIO_BUCKET"),
+			UseSSL:    viper.GetBool("MINIO_USE_SSL"),
 		},
 		Redis: Redis{
 			Host:     viper.GetString("REDIS_HOST"),
