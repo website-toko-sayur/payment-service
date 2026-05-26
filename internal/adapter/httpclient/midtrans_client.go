@@ -3,7 +3,6 @@ package httpclient
 import (
 	"payment-service/config"
 
-	"github.com/gofiber/fiber/v3"
 	"github.com/midtrans/midtrans-go"
 	"github.com/midtrans/midtrans-go/snap"
 	"github.com/rs/zerolog/log"
@@ -47,7 +46,7 @@ func (m *midtransClient) CreateTransaction(orderID string, amount int64, custome
 			Str("customer_email", customerEmail).
 			Msg("failed to create midtrans transaction")
 
-		return "", fiber.NewError(fiber.StatusInternalServerError, "failed create transaction")
+		return "", err
 	}
 
 	log.Info().
