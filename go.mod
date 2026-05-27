@@ -59,6 +59,7 @@ require (
 	github.com/go-playground/validator/v10 v10.30.2
 	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
 	github.com/gofiber/fiber/v3 v3.3.0
+	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/midtrans/midtrans-go v1.3.8
 	github.com/minio/minio-go/v7 v7.1.0
 	github.com/pelletier/go-toml/v2 v2.2.4 // indirect
