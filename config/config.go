@@ -18,6 +18,8 @@ type App struct {
 	GatewaySecretKey  string `json:"gateway_secret_key"`
 	RequestApiGAteway string `json:"request_api_gateway"`
 
+	InternalSecretKey string `json:"internal_secret_key"`
+
 	ServerTimeOut     int    `json:"server_timeout"`
 	ProductServiceUrl string `json:"product_service_url"`
 	UserServiceUrl    string `json:"user_service_url"`
@@ -88,6 +90,8 @@ func NewConfig() *Config {
 
 			GatewaySecretKey:  viper.GetString("GATEWAY_SECRET_KEY"),
 			RequestApiGAteway: viper.GetString("REQUEST_API_GATEWAY"),
+
+			InternalSecretKey: viper.GetString("INTERNAL_SECRET_KEY"),
 
 			ServerTimeOut:     viper.GetInt("SERVER_TIMEOUT"),
 			ProductServiceUrl: viper.GetString("PRODUCT_SERVICE_URL"),

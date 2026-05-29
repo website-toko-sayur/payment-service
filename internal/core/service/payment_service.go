@@ -15,6 +15,7 @@ import (
 	"strconv"
 
 	"github.com/gofiber/fiber/v3"
+	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 )
 
@@ -44,6 +45,8 @@ func NewPaymentService(repo repository.PaymentRepositoryInterface, cfg *config.C
 }
 
 func (p *paymentService) GetDetail(ctx context.Context, paymentID uint, accessToken string) (*entity.PaymentEntity, error) {
+	requestID := uuid.NewString()
+
 	result, err := p.repo.GetDetail(ctx, paymentID)
 	if err != nil {
 		log.Error().
@@ -74,12 +77,12 @@ func (p *paymentService) GetDetail(ctx context.Context, paymentID uint, accessTo
 		return nil, err
 	}
 
-	isAdmin := false
-	if token["role_name"].(string) == "Super Admin" {
-		isAdmin = true
-	}
+	// isAdmin := false
+	// if token["role_name"].(string) == "Super Admin" {
+	// 	isAdmin = true
+	// }
 
-	userDetail, err := p.httpClientUserService(token["token"].(string), userID, isAdmin)
+	userDetail, err := p.httpClientUserService(requestID, userID)
 	if err != nil {
 		log.Error().
 			Err(err).
@@ -157,6 +160,8 @@ func (p *paymentService) ProcessPayment(ctx context.Context, payment entity.Paym
 		Int64("user_id", int64(payment.UserID)).
 		Str("payment_method", payment.PaymentMethod).
 		Msg("starting process payment")
+
+	requestID := uuid.NewString()
 
 	err := p.repo.GetByOrderID(ctx, uint(payment.OrderID))
 	if err == nil {
@@ -249,7 +254,7 @@ func (p *paymentService) ProcessPayment(ctx context.Context, payment entity.Paym
 			Str("dependency", "user-service").
 			Msg("fetching user data")
 
-		userResponse, err := p.httpClientUserService(token["token"].(string), int64(payment.UserID), isAdmin)
+		userResponse, err := p.httpClientUserService(requestID, int64(payment.UserID))
 		if err != nil {
 			log.Error().
 				Err(err).
@@ -391,20 +396,22 @@ func (p *paymentService) httpClientOrderService(orderId int64, accessToken strin
 	return &orderDetail.Data, nil
 }
 
-func (p *paymentService) httpClientUserService(accessToken string, userID int64, isAdmin bool) (*entity.ProfileHttpResponse, error) {
-	baseUrlUser := fmt.Sprintf("%s/%s", p.cfg.App.UserServiceUrl, "auth/profile")
-	if isAdmin {
-		baseUrlUser = fmt.Sprintf("%s/%s", p.cfg.App.UserServiceUrl, "admin/customers/"+strconv.FormatInt(userID, 10))
-	}
+func (p *paymentService) httpClientUserService(requestID string, userID int64) (*entity.ProfileHttpResponse, error) {
+	baseUrlUser := fmt.Sprintf("%s/%s", p.cfg.App.UserServiceUrl, "internal/users/"+strconv.FormatInt(userID, 10))
 	header := map[string]string{
-		"Authorization": "Bearer " + accessToken,
-		"Accept":        "application/json",
+		"X-Internal-Service": "true",
+		"X-Internal-Secret":  p.cfg.App.InternalSecretKey,
+		"X-From-Service":     "payment-service",
+		"Accept":             "application/json",
+		"X-Request-ID":       requestID,
 	}
 	dataUser, err := p.httpClient.CallURL("GET", baseUrlUser, header, nil)
 	if err != nil {
 		log.Error().
 			Err(err).
-			Str("source", "internal.core.paymentService.httpClientUserService")
+			Str("request_id", requestID).
+			Str("source", "internal.core.paymentService.httpClientUserService").
+			Msg("failed request user service")
 		return nil, err
 	}
 
@@ -414,16 +421,20 @@ func (p *paymentService) httpClientUserService(accessToken string, userID int64,
 	if err != nil {
 		log.Error().
 			Err(err).
-			Str("source", "internal.core.paymentService.httpClientUserService")
+			Str("request_id", requestID).
+			Str("source", "internal.core.paymentService.httpClientUserService").
+			Msg("failed read user service response")
 		return nil, err
 	}
 
 	var userResponse entity.UserHttpClientResponse
-	err = json.Unmarshal([]byte(body), &userResponse)
+	err = json.Unmarshal(body, &userResponse)
 	if err != nil {
 		log.Error().
 			Err(err).
-			Str("source", "internal.core.paymentService.httpClientUserService")
+			Str("request_id", requestID).
+			Str("source", "internal.core.paymentService.httpClientUserService").
+			Msg("failed unmarshal user response")
 		return nil, err
 	}
 
