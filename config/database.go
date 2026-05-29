@@ -31,7 +31,7 @@ func (cfg Config) ConnectionPostgres() (*Postgres, error) {
 		return nil, err
 	}
 
-	db.AutoMigrate(&model.PaymentLog{}, &model.Payment{})
+	db.AutoMigrate(&model.Payment{}, &model.PaymentLog{})
 	sqlDB, err := db.DB()
 	if err != nil {
 		log.Error().
