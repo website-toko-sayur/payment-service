@@ -14,7 +14,6 @@ import (
 	"payment-service/internal/core/domain/model"
 	"strconv"
 
-	"github.com/gofiber/fiber/v3"
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 )
@@ -213,7 +212,7 @@ func (p *paymentService) ProcessPayment(ctx context.Context, payment entity.Paym
 					Err(err).
 					Str("source", "internal.core.paymentService.ProcessPayment").
 					Msg("Failed publish payment success event")
-				return nil, fiber.ErrInternalServerError
+				return nil, err
 			}
 		} else {
 			log.Info().
@@ -341,7 +340,7 @@ func (p *paymentService) ProcessPayment(ctx context.Context, payment entity.Paym
 					Err(err).
 					Str("source", "internal.core.paymentService.ProcessPayment").
 					Msg("Failed publish payment success event")
-				return nil, fiber.ErrInternalServerError
+				return nil, err
 			}
 		} else {
 			log.Info().
