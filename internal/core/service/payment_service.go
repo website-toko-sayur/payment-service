@@ -134,7 +134,8 @@ func (p *paymentService) GetAll(ctx context.Context, req entity.PaymentQueryStri
 }
 
 func (p *paymentService) UpdateStatusByOrderCode(ctx context.Context, orderCode string, status string) error {
-	orderDetailID, err := p.httpClientPublicOrderIDByCodeService(orderCode)
+	requestID := uuid.NewString()
+	orderDetailID, err := p.httpClientPublicOrderIDByCodeService(requestID, orderCode)
 	if err != nil {
 		log.Error().
 			Err(err).
@@ -440,52 +441,67 @@ func (p *paymentService) httpClientUserService(requestID string, userID int64) (
 	return &userResponse.Data, nil
 }
 
-func (p *paymentService) httpClientOrderByCodeService(orderCode string, accessToken string) (*entity.OrderDetailHttpResponse, error) {
-	baseUrlOrder := fmt.Sprintf("%s/%s", p.cfg.App.OrderServiceUrl, "auth/orders/"+orderCode+"/code")
+// func (p *paymentService) httpClientOrderByCodeService(requestID string, orderCode string, accessToken string) (*entity.OrderDetailHttpResponse, error) {
+// 	baseUrlOrder := fmt.Sprintf("%s/%s", p.cfg.App.OrderServiceUrl, "internal/orders/"+orderCode+"/code")
+// 	header := map[string]string{
+// 		"X-Internal-Service": "true",
+// 		"X-Internal-Secret":  p.cfg.App.InternalSecretKey,
+// 		"X-From-Service":     "payment-service",
+// 		"Accept":             "application/json",
+// 		"X-Request-ID":       requestID,
+// 	}
+// 	dataOrder, err := p.httpClient.CallURL("GET", baseUrlOrder, header, nil)
+// 	if err != nil {
+// 		log.Error().
+// 			Err(err).
+// 			Str("request_id", requestID).
+// 			Str("source", "internal.core.paymentService.httpClientOrderByCodeService").
+// 			Msg("failed request order service")
+// 		return nil, err
+// 	}
+
+// 	defer dataOrder.Body.Close()
+
+// 	body, err := io.ReadAll(dataOrder.Body)
+// 	if err != nil {
+// 		log.Error().
+// 			Err(err).
+// 			Str("request_id", requestID).
+// 			Str("source", "internal.core.paymentService.httpClientOrderByCodeService").
+// 			Msg("failed read order service response")
+// 		return nil, err
+// 	}
+
+// 	var orderDetail entity.OrderHttpClientResponse
+// 	err = json.Unmarshal([]byte(body), &orderDetail)
+// 	if err != nil {
+// 		log.Error().
+// 			Err(err).
+// 			Str("request_id", requestID).
+// 			Str("source", "internal.core.paymentService.httpClientOrderByCodeService").
+// 			Msg("failed unmarshal order response")
+// 		return nil, err
+// 	}
+
+// 	return &orderDetail.Data, nil
+// }
+
+func (p *paymentService) httpClientPublicOrderIDByCodeService(requestID string, orderCode string) (int64, error) {
+	baseUrlOrder := fmt.Sprintf("%s/%s", p.cfg.App.OrderServiceUrl, "internal/public/orders/"+orderCode+"/code")
 	header := map[string]string{
-		"Authorization": "Bearer " + accessToken,
-		"Accept":        "application/json",
+		"X-Internal-Service": "true",
+		"X-Internal-Secret":  p.cfg.App.InternalSecretKey,
+		"X-From-Service":     "payment-service",
+		"Accept":             "application/json",
+		"X-Request-ID":       requestID,
 	}
 	dataOrder, err := p.httpClient.CallURL("GET", baseUrlOrder, header, nil)
 	if err != nil {
 		log.Error().
 			Err(err).
-			Str("source", "internal.core.paymentService.httpClientOrderByCodeService")
-		return nil, err
-	}
-
-	defer dataOrder.Body.Close()
-
-	body, err := io.ReadAll(dataOrder.Body)
-	if err != nil {
-		log.Error().
-			Err(err).
-			Str("source", "internal.core.paymentService.httpClientOrderByCodeService")
-		return nil, err
-	}
-
-	var orderDetail entity.OrderHttpClientResponse
-	err = json.Unmarshal([]byte(body), &orderDetail)
-	if err != nil {
-		log.Error().
-			Err(err).
-			Str("source", "internal.core.paymentService.httpClientOrderByCodeService")
-		return nil, err
-	}
-
-	return &orderDetail.Data, nil
-}
-
-func (p *paymentService) httpClientPublicOrderIDByCodeService(orderCode string) (int64, error) {
-	baseUrlOrder := fmt.Sprintf("%s/%s", p.cfg.App.OrderServiceUrl, "public/orders/"+orderCode+"/code")
-	header := map[string]string{
-		"Accept": "application/json",
-	}
-	dataOrder, err := p.httpClient.CallURL("GET", baseUrlOrder, header, nil)
-	if err != nil {
-		log.Error().
-			Err(err).
-			Str("source", "internal.core.paymentService.httpClientPublicOrderIDByCodeService")
+			Str("request_id", requestID).
+			Str("source", "internal.core.paymentService.httpClientPublicOrderIDByCodeService").
+			Msg("failed request order service")
 		return 0, err
 	}
 
@@ -494,7 +510,8 @@ func (p *paymentService) httpClientPublicOrderIDByCodeService(orderCode string) 
 	if dataOrder.StatusCode != 200 {
 		log.Error().
 			Err(err).
-			Str("source", "internal.core.paymentService.httpClientPublicOrderIDByCodeService")
+			Str("source", "internal.core.paymentService.httpClientPublicOrderIDByCodeService").
+			Msg("Order not found")
 		return 0, errors.New("Order not found")
 	}
 
@@ -502,7 +519,9 @@ func (p *paymentService) httpClientPublicOrderIDByCodeService(orderCode string) 
 	if err != nil {
 		log.Error().
 			Err(err).
-			Str("source", "internal.core.paymentService.httpClientPublicOrderIDByCodeService")
+			Str("request_id", requestID).
+			Str("source", "internal.core.paymentService.httpClientPublicOrderIDByCodeService").
+			Msg("failed read order service response")
 		return 0, err
 	}
 
@@ -511,7 +530,9 @@ func (p *paymentService) httpClientPublicOrderIDByCodeService(orderCode string) 
 	if err != nil {
 		log.Error().
 			Err(err).
-			Str("source", "internal.core.paymentService.httpClientPublicOrderIDByCodeService")
+			Str("request_id", requestID).
+			Str("source", "internal.core.paymentService.httpClientPublicOrderIDByCodeService").
+			Msg("failed unmarshal order response")
 		return 0, err
 	}
 
