@@ -8,6 +8,7 @@ import (
 	"payment-service/internal/adapter/handler/response"
 	"payment-service/internal/core/domain/entity"
 	"payment-service/internal/core/service"
+	"payment-service/internal/middleware"
 	"payment-service/utils/conv"
 
 	"github.com/gofiber/fiber/v3"
@@ -39,14 +40,17 @@ func NewPaymentHandler(
 	}
 
 	mid := adapter.NewMiddlewareAdapter(cfg, jwtService, redis)
+	midGateway := middleware.GatewayValidationMiddleware(cfg)
 
 	app.Post("/payments/webhook", paymentHandler.MidtranswebHookHandler)
 
-	adminGroup := app.Group("/admin", mid.CheckToken())
+	// admin route via gateway + jwt
+	adminGroup := app.Group("/admin", midGateway, mid.CheckToken())
 	adminGroup.Get("/payments", paymentHandler.GetAllAdmin)
 	adminGroup.Get("/payments/:id", paymentHandler.GetDetail)
 
-	authGroup := app.Group("/auth", mid.CheckToken())
+	// auth route via gateway
+	authGroup := app.Group("/auth", midGateway, mid.CheckToken())
 	authGroup.Get("/payments", paymentHandler.GetAllCustomer)
 	authGroup.Get("/payments/:id", paymentHandler.GetDetail)
 	authGroup.Post("/payments", paymentHandler.Create)
