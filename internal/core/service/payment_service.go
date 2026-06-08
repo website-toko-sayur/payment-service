@@ -68,18 +68,13 @@ func (p *paymentService) GetDetail(ctx context.Context, paymentID uint, accessTo
 		userID = 0
 	}
 
-	orderDetail, err := p.httpClientOrderService(int64(result.OrderID), token["token"].(string))
+	orderDetail, err := p.httpClientOrderService(requestID, int64(result.OrderID), token["token"].(string))
 	if err != nil {
 		log.Error().
 			Err(err).
 			Str("source", "internal.core.paymentService.GetDetail")
 		return nil, err
 	}
-
-	// isAdmin := false
-	// if token["role_name"].(string) == "Super Admin" {
-	// 	isAdmin = true
-	// }
 
 	userDetail, err := p.httpClientUserService(requestID, userID)
 	if err != nil {
@@ -102,6 +97,8 @@ func (p *paymentService) GetDetail(ctx context.Context, paymentID uint, accessTo
 }
 
 func (p *paymentService) GetAll(ctx context.Context, req entity.PaymentQueryStringRequest, accessToken string) ([]entity.PaymentEntity, int64, int64, error) {
+	requestID := uuid.NewString()
+
 	results, count, total, err := p.repo.GetAll(ctx, req)
 	if err != nil {
 		log.Error().
@@ -119,7 +116,7 @@ func (p *paymentService) GetAll(ctx context.Context, req entity.PaymentQueryStri
 		return nil, 0, 0, err
 	}
 	for key, val := range results {
-		orderDetail, err := p.httpClientOrderService(int64(val.OrderID), token["token"].(string))
+		orderDetail, err := p.httpClientOrderService(requestID, int64(val.OrderID), token["token"].(string))
 		if err != nil {
 			log.Error().
 				Err(err).
@@ -271,7 +268,7 @@ func (p *paymentService) ProcessPayment(ctx context.Context, payment entity.Paym
 			Str("dependency", "order-service").
 			Msg("fetching order detail")
 
-		orderDetail, err := p.httpClientOrderService(int64(payment.OrderID), token["token"].(string))
+		orderDetail, err := p.httpClientOrderService(requestID, int64(payment.OrderID), token["token"].(string))
 		if err != nil {
 			log.Error().
 				Err(err).
@@ -360,17 +357,22 @@ func (p *paymentService) ProcessPayment(ctx context.Context, payment entity.Paym
 	return nil, errors.New("Invalid payment method")
 }
 
-func (p *paymentService) httpClientOrderService(orderId int64, accessToken string) (*entity.OrderDetailHttpResponse, error) {
-	baseUrlOrder := fmt.Sprintf("%s/%s", p.cfg.App.OrderServiceUrl, "auth/orders/"+strconv.FormatInt(orderId, 10))
+func (p *paymentService) httpClientOrderService(requestID string, orderId int64, accessToken string) (*entity.OrderDetailHttpResponse, error) {
+	baseUrlOrder := fmt.Sprintf("%s/%s", p.cfg.App.OrderServiceUrl, "internal/orders/"+strconv.FormatInt(orderId, 10))
 	header := map[string]string{
-		"Authorization": "Bearer " + accessToken,
-		"Accept":        "application/json",
+		"X-Internal-Service": "true",
+		"X-Internal-Secret":  p.cfg.App.InternalSecretKey,
+		"X-From-Service":     "payment-service",
+		"Accept":             "application/json",
+		"X-Request-ID":       requestID,
 	}
 	dataOrder, err := p.httpClient.CallURL("GET", baseUrlOrder, header, nil)
 	if err != nil {
 		log.Error().
 			Err(err).
-			Str("source", "internal.core.paymentService.httpClientOrderService")
+			Str("request_id", requestID).
+			Str("source", "internal.core.paymentService.httpClientOrderService").
+			Msg("failed request order service")
 		return nil, err
 	}
 
@@ -380,7 +382,9 @@ func (p *paymentService) httpClientOrderService(orderId int64, accessToken strin
 	if err != nil {
 		log.Error().
 			Err(err).
-			Str("source", "internal.core.paymentService.httpClientOrderService")
+			Str("request_id", requestID).
+			Str("source", "internal.core.paymentService.httpClientOrderService").
+			Msg("failed read order service response")
 		return nil, err
 	}
 
@@ -389,7 +393,9 @@ func (p *paymentService) httpClientOrderService(orderId int64, accessToken strin
 	if err != nil {
 		log.Error().
 			Err(err).
-			Str("source", "internal.core.paymentService.httpClientOrderService")
+			Str("request_id", requestID).
+			Str("source", "internal.core.paymentService.httpClientOrderService").
+			Msg("failed unmarshal order response")
 		return nil, err
 	}
 
