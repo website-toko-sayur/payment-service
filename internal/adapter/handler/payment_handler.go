@@ -42,7 +42,8 @@ func NewPaymentHandler(
 	mid := adapter.NewMiddlewareAdapter(cfg, jwtService, redis)
 	midGateway := middleware.GatewayValidationMiddleware(cfg)
 
-	app.Post("/payments/webhook", paymentHandler.MidtranswebHookHandler)
+	// public route via gateway
+	app.Post("/payments/webhook", midGateway, paymentHandler.MidtranswebHookHandler)
 
 	// admin route via gateway + jwt
 	adminGroup := app.Group("/admin", midGateway, mid.CheckToken())
